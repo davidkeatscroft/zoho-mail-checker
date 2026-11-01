@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mail Checker for Zoho: Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <h1>Mail Checker for Zoho</h1>
+
+    <section>
+      <h2>Connect to Zoho</h2>
+      <p>The extension talks directly to Zoho using your own free API client, so no third party ever handles your mail. You only need to do this once.</p>
+      <ol>
+        <li>
+          <label for="region">Choose where your Zoho account is hosted</label>
+          <select id="region"></select>
+        </li>
+        <li>Open the <a id="console-link" target="_blank" rel="noopener">Zoho API Console</a>, choose <strong>Add Client</strong>, then <strong>Server-based Applications</strong>.</li>
+        <li>
+          Give it any name and homepage URL, and set <strong>Authorized Redirect URIs</strong> to exactly:
+          <div class="copy-row">
+            <code id="redirect-uri"></code>
+            <button id="copy-redirect" type="button">Copy</button>
+          </div>
+        </li>
+        <li>
+          Paste the client's details here:
+          <div class="field">
+            <label for="client-id">Client ID</label>
+            <input id="client-id" type="text" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="field">
+            <label for="client-secret">Client Secret</label>
+            <input id="client-secret" type="password" autocomplete="off" spellcheck="false">
+          </div>
+        </li>
+      </ol>
+      <button id="connect" class="primary" type="button">Connect a Zoho account</button>
+      <p id="connect-status" class="status" role="status"></p>
+      <p class="note">Your client secret and sign-in token are stored unencrypted in this Firefox profile, and are only ever sent to Zoho. Mail content is never saved to disk by this extension.</p>
+    </section>
+
+    <section>
+      <h2>Connected accounts</h2>
+      <div id="accounts"></div>
+    </section>
+
+    <section>
+      <h2>Preferences</h2>
+      <div class="pref">
+        <label for="poll-minutes">Check for new mail every</label>
+        <select id="poll-minutes">
+          <option value="1">1 minute</option>
+          <option value="2">2 minutes</option>
+          <option value="5">5 minutes</option>
+          <option value="10">10 minutes</option>
+          <option value="30">30 minutes</option>
+        </select>
+      </div>
+      <label class="check"><input type="checkbox" id="notify"> Show desktop notifications for new mail</label>
+      <label class="check"><input type="checkbox" id="notify-preview"> Include sender, subject and preview in notifications</label>
+      <label class="check"><input type="checkbox" id="sound"> Play a sound for new mail</label>
+      <label class="check"><input type="checkbox" id="mark-read-on-open"> Mark mail as read when I open it in the popup</label>
+      <label class="check"><input type="checkbox" id="load-remote-images"> Always load remote images (lets senders see when you open their mail)</label>
+    </section>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

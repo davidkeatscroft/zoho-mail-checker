@@ -1,0 +1,59 @@
+{
+  "manifest_version": 3,
+  "name": "Mail Checker for Zoho",
+  "version": "0.1.0",
+  "description": "See unread Zoho Mail in your toolbar, get desktop notifications, and read, archive, delete or reply without opening Zoho Mail.",
+  "icons": {
+    "48": "icons/icon.svg",
+    "96": "icons/icon.svg"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "zoho-mail-checker@extension.local",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "action": {
+    "default_title": "Mail Checker for Zoho",
+    "default_popup": "popup/popup.html",
+    "default_icon": "icons/icon.svg"
+  },
+  "background": {
+    "scripts": ["background.js"],
+    "type": "module"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "permissions": ["alarms", "identity", "notifications", "storage"],
+  "host_permissions": [
+    "https://accounts.zoho.com/*",
+    "https://accounts.zoho.eu/*",
+    "https://accounts.zoho.in/*",
+    "https://accounts.zoho.com.au/*",
+    "https://accounts.zoho.jp/*",
+    "https://accounts.zohocloud.ca/*",
+    "https://accounts.zoho.com.cn/*",
+    "https://accounts.zoho.ae/*",
+    "https://accounts.zoho.sa/*",
+    "https://mail.zoho.com/*",
+    "https://mail.zoho.eu/*",
+    "https://mail.zoho.in/*",
+    "https://mail.zoho.com.au/*",
+    "https://mail.zoho.jp/*",
+    "https://mail.zohocloud.ca/*",
+    "https://mail.zoho.com.cn/*",
+    "https://mail.zoho.ae/*",
+    "https://mail.zoho.sa/*"
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Alt+Shift+Z" },
+      "description": "Open the unread mail popup"
+    }
+  }
+}

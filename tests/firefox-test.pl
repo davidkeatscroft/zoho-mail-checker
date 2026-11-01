@@ -21,7 +21,7 @@ my $profile = tempdir('zmc-profile-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 
 open my $prefs, '>', "$profile/user.js" or die $!;
 print $prefs qq{user_pref("marionette.port", $port);\n};
-print $prefs qq{user_pref("extensions.webextensions.uuids", "{\\"zoho-mail-checker\@extension.local\\":\\"$uuid\\"}");\n};
+print $prefs qq{user_pref("extensions.webextensions.uuids", "{\\"zoho-mail-checker\@davidkeatscroft.com\\":\\"$uuid\\"}");\n};
 print $prefs qq{user_pref("extensions.background.idle.timeout", 600000);\n};
 print $prefs qq{user_pref("browser.shell.checkDefaultBrowser", false);\n};
 print $prefs qq{user_pref("datareporting.policy.dataSubmissionEnabled", false);\n};

@@ -1,6 +1,6 @@
-# Mail Checker for Zoho
+# Checker Plus for Zoho Mail
 
-A Firefox extension for Zoho Mail, inspired by Checker Plus for Gmail. It is an independent project, not affiliated with Zoho or Jason Savard.
+A Firefox extension for Zoho Mail, inspired by Checker Plus for Gmail. By David Keats-Croft. It is an independent project, not affiliated with or endorsed by Zoho or Jason Savard.
 
 ## Features
 
@@ -48,3 +48,7 @@ If you connect a login from a different Zoho region from the one the client was 
 ## Tests
 
 `perl tests/firefox-test.pl <screenshot-dir>` installs the extension into a throwaway headless Firefox profile, runs `tests/run.js` with Zoho's servers mocked, and screenshots the pages. It needs Firefox in `/Applications`, so it is macOS only as written. It does not touch your normal profile or a real mailbox.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).

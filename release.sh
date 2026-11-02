@@ -23,14 +23,16 @@ gh release create "v$version" "$staging/$name" --repo "$repo" --target main --ti
 
 hash=$(shasum -a 256 "$xpi" | cut -d' ' -f1)
 link="https://github.com/$repo/releases/download/v$version/$name"
-perl -MJSON::PP -0777 -i -e '
+perl -MJSON::PP -0777 -e '
   my ($version, $link, $hash) = splice @ARGV, 0, 3;
   my $json = JSON::PP->new->pretty->canonical->indent_length(2);
   my $data = $json->decode(<>);
   my ($id) = keys %{ $data->{addons} };
   push @{ $data->{addons}{$id}{updates} }, { version => $version, update_link => $link, update_hash => "sha256:$hash" };
   print $json->encode($data);
-' "$version" "$link" "$hash" updates.json
+' "$version" "$link" "$hash" updates.json > "$staging/updates.json"
+grep -q "\"version\" : \"$version\"" "$staging/updates.json" || { echo "Could not add $version to updates.json." >&2; exit 1; }
+mv "$staging/updates.json" updates.json
 git commit -q -m "List $version in updates.json" updates.json
 git push -q origin main
 echo "Released $version: $link"

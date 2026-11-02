@@ -15,7 +15,7 @@ unzip -l "$xpi" | grep -q 'META-INF/mozilla.rsa' || { echo "The .xpi is not sign
 [ "$(git branch --show-current)" = main ] || { echo "Switch to main first." >&2; exit 1; }
 git diff --quiet HEAD || { echo "Commit or stash your changes first." >&2; exit 1; }
 
-name="checker-plus-for-zoho-mail-$version.xpi"
+name="inbox-peek-for-zoho-mail-$version.xpi"
 staging=$(mktemp -d)
 cp "$xpi" "$staging/$name"
 gh release create "v$version" "$staging/$name" --repo "$repo" --target main --title "$version" \

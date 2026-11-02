@@ -106,7 +106,7 @@ function renderList() {
   const all = accounts();
   if (!all.length) {
     nodes.push(emptyState(
-      state?.configured ? 'Connect your Zoho account' : 'Set up Checker Plus for Zoho Mail',
+      state?.configured ? 'Connect your Zoho account' : 'Set up Inbox Peek for Zoho Mail',
       'Unread mail will show up here once an account is connected.',
       'Open settings',
       () => browser.runtime.openOptionsPage(),

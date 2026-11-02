@@ -27,6 +27,16 @@ Release Firefox only keeps signed add-ons. Signing is free and the add-on doesn'
 2. Upload it at <https://addons.mozilla.org/developers/addon/submit/distribution> and choose **On your own**.
 3. Install the signed `.xpi` that Mozilla returns.
 
+### Updates
+
+From version 1.2, Firefox checks [`updates.json`](updates.json) on `main` about once a day and installs newer versions itself. It asks first only if a new version needs extra permissions. Copies of 1.0 or 1.1 can't update this way, so install 1.2 by hand once.
+
+To release a version:
+
+1. Raise `version` in `manifest.json`, commit, and merge to `main`.
+2. Run `sh build.sh` and upload the zip to Mozilla as a new version of the add-on.
+3. Download the signed `.xpi`, then run `sh release.sh path/to/signed.xpi` on `main`. This publishes the `.xpi` as a GitHub release and lists it in `updates.json`.
+
 ## Connect your account
 
 The settings page opens on install and walks through this:

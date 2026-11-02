@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Checker Plus for Zoho Mail",
-  "version": "1.1",
+  "version": "1.2",
   "author": "David Keats-Croft",
   "description": "See unread Zoho Mail in your toolbar, get desktop notifications, and read, archive, delete or reply without opening Zoho Mail.",
   "icons": {
@@ -12,6 +12,7 @@
     "gecko": {
       "id": "zoho-mail-checker@davidkeatscroft.com",
       "strict_min_version": "140.0",
+      "update_url": "https://raw.githubusercontent.com/davidkeatscroft/zoho-mail-checker/main/updates.json",
       "data_collection_permissions": {
         "required": ["none"]
       }

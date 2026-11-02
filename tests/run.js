@@ -2,6 +2,7 @@ import { REGIONS, regionFromRedirect } from '../lib/config.js';
 import { extractEmail, parseJsonKeepingIds, replyToFromHeaders, updateMessageBody } from '../lib/zoho.js';
 import { badgeText, decodeEntities, diffNewMessages, replySubject, updateSeen } from '../lib/inbox.js';
 import { buildEmailDocument, isSafeExternalLink } from '../lib/email-frame.js';
+import { DND_ALARM, dndEnd, dndStatus, isDndOn } from '../lib/dnd.js';
 import { ACCOUNT_ID, INBOX_ID, createMock, message } from './mock-zoho.js';
 
 const results = [];
@@ -115,6 +116,21 @@ await test('email HTML has active content stripped', () => {
   assertTrue(/img-src data: https: http:;/.test(buildEmailDocument('', { allowRemote: true }).srcdoc), 'opt-in');
   assertTrue(!buildEmailDocument('<p>plain</p>').hasRemote, 'plain has no remote');
   assertTrue(buildEmailDocument('<div style="background:url(https://t.example/x)">a</div>').hasRemote, 'css remote');
+});
+
+await test('do-not-disturb periods end at the right time', () => {
+  const now = new Date(2026, 10, 2, 22, 15);
+  assertEqual(dndEnd('30m', now), now.getTime() + 30 * 60000);
+  assertEqual(dndEnd('4h', now), now.getTime() + 4 * 3600000, 'crosses midnight');
+  assertEqual(dndEnd('today', now), new Date(2026, 10, 3).getTime(), 'local midnight');
+  assertEqual(dndEnd('forever', now), null);
+  assertTrue(isDndOn({ until: null }), 'indefinite');
+  assertTrue(isDndOn({ until: now.getTime() + 1 }, now.getTime()), 'running');
+  assertTrue(!isDndOn({ until: now.getTime() }, now.getTime()), 'expired');
+  assertTrue(!isDndOn(undefined), 'unset');
+  assertEqual(dndStatus({ choice: 'forever', until: null }), 'on');
+  assertEqual(dndStatus({ choice: 'today', until: 1 }), 'on for the rest of today');
+  assertTrue(/^on until \d/.test(dndStatus({ choice: '1h', until: now.getTime() })), 'shows end time');
 });
 
 await test('link schemes are limited', () => {
@@ -322,6 +338,33 @@ await test('reconnecting the same login replaces it', async () => {
   const state = await send('getState');
   assertEqual(state.connections.length, 1);
   assertEqual(state.connections[0].needsReauth, false);
+});
+
+await test('do not disturb silences new mail until it is turned off', async () => {
+  await browser.notifications.getAll().then((all) => Promise.all(Object.keys(all).map((id) => browser.notifications.clear(id))));
+  // The menu items exist: updating a missing one rejects.
+  await browser.menus.update('dnd-off', {});
+  await send('setDoNotDisturb', { choice: '30m' });
+  const { dnd } = await send('getState');
+  assertTrue(/^on until/.test(dnd.status), dnd.status);
+  assertEqual((await browser.alarms.get(DND_ALARM)).scheduledTime, dnd.until, 'end alarm');
+  assertTrue((await browser.action.getTitle({})).includes('(do not disturb on until'), 'tooltip');
+
+  mock.unread.push(message('1709876190693100051', 'Quiet', 'During DND', '', 1));
+  await send('check');
+  assertEqual(await badge(), '2', 'badge still counts');
+  assertEqual(Object.keys(await browser.notifications.getAll()), [], 'no notification');
+
+  await send('setDoNotDisturb', { choice: 'forever' });
+  assertEqual((await send('getState')).dnd.status, 'on');
+  assertEqual(await browser.alarms.get(DND_ALARM), undefined, 'no end alarm');
+
+  await send('setDoNotDisturb', { choice: null });
+  assertEqual((await send('getState')).dnd, null);
+  assertTrue(!(await browser.action.getTitle({})).includes('disturb'), 'tooltip restored');
+  mock.unread.push(message('1709876190693100052', 'Loud', 'After DND', '', 1));
+  await send('check');
+  assertEqual(Object.keys(await browser.notifications.getAll()), ['message:1709876190693100052'], 'only the new one');
 });
 
 await test('disconnecting revokes the token and clears the badge', async () => {

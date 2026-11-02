@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Checker Plus for Zoho Mail",
-  "version": "1.0",
+  "version": "1.1",
   "author": "David Keats-Croft",
   "description": "See unread Zoho Mail in your toolbar, get desktop notifications, and read, archive, delete or reply without opening Zoho Mail.",
   "icons": {
@@ -30,7 +30,7 @@
     "page": "options/options.html",
     "open_in_tab": true
   },
-  "permissions": ["alarms", "identity", "notifications", "storage"],
+  "permissions": ["alarms", "identity", "menus", "notifications", "storage"],
   "host_permissions": [
     "https://accounts.zoho.com/*",
     "https://accounts.zoho.eu/*",

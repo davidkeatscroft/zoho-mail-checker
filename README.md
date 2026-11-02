@@ -7,6 +7,7 @@ A Firefox extension for Zoho Mail, inspired by Checker Plus for Gmail. By David 
 - Unread count on the toolbar button, across every connected account
 - Desktop notifications and a sound for new mail, with a summary when several arrive at once
 - A popup to read mail, mark it read, archive, report spam, move to Trash and send plain-text replies
+- Right-click the toolbar button to open Zoho Mail, compose, refresh, or turn on do not disturb for 30 minutes, 1, 2 or 4 hours, the rest of today, or until you turn it off. Do not disturb silences notifications and the sound; the unread count keeps updating.
 - Several Zoho logins, each with a choice of folders to watch
 - Remote images blocked by default, so senders can't tell when you open their mail
 - Keyboard use: `Alt+Shift+Z` opens the popup, `j`/`k` move, `Enter` opens, `m` marks read, `e` archives, `d` trashes, `r` replies (in the reading view), `!` reports spam (in the reading view), `u` goes back

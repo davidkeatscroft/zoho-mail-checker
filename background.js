@@ -4,6 +4,7 @@ import {
   extractEmail, listUnread, normalizeAccount, normalizeFolder, replyToFromHeaders, request, updateMessageBody,
 } from './lib/zoho.js';
 import { badgeText, decodeEntities, diffNewMessages, totalUnread, updateSeen } from './lib/inbox.js';
+import { DND_ALARM, DND_CHOICES, dndEnd, dndStatus, isDndOn } from './lib/dnd.js';
 
 const ACTED_TTL_MS = 60000;
 const UPDATE_MODES = { markRead: 'markAsRead', archive: 'archiveMails', spam: 'moveToSpam' };
@@ -30,6 +31,11 @@ async function loadSettings() {
 async function loadConnections() {
   const { connections = [] } = await browser.storage.local.get('connections');
   return connections;
+}
+
+async function loadDnd() {
+  const { dnd } = await browser.storage.local.get('dnd');
+  return isDndOn(dnd) ? dnd : null;
 }
 
 async function loadInbox() {
@@ -101,7 +107,9 @@ async function renderBadge(inbox) {
   await browser.action.setBadgeTextColor({ color: '#ffffff' });
   await browser.action.setBadgeText({ text: badgeText(inbox) });
   const total = totalUnread(inbox);
-  await browser.action.setTitle({ title: total ? `Zoho Mail: ${total} unread` : 'Zoho Mail: no unread mail' });
+  const dnd = await loadDnd();
+  const quiet = dnd ? ` (do not disturb ${dndStatus(dnd)})` : '';
+  await browser.action.setTitle({ title: `Zoho Mail: ${total ? `${total} unread` : 'no unread mail'}${quiet}` });
 }
 
 function messageUrl(region, folderPath, messageId) {
@@ -127,7 +135,8 @@ function playChime() {
 }
 
 async function notifyNewMail(newMessages, connections, settings) {
-  if (!newMessages.length) return;
+  // Mail that arrives during do not disturb is still marked seen, so it stays quiet afterwards too.
+  if (!newMessages.length || await loadDnd()) return;
   if (settings.sound) {
     try {
       playChime();
@@ -375,9 +384,10 @@ async function setWatchedFolders({ accountId, folderIds }) {
 
 // Summaries for pages: never includes tokens.
 async function getState() {
-  const [connections, settings, inbox] = await Promise.all([loadConnections(), loadSettings(), loadInbox()]);
+  const [connections, settings, inbox, dnd] = await Promise.all([loadConnections(), loadSettings(), loadInbox(), loadDnd()]);
   return {
     configured: Boolean(settings.clientId && settings.clientSecret),
+    dnd: dnd ? { until: dnd.until, status: dndStatus(dnd) } : null,
     settings: {
       markReadOnOpen: settings.markReadOnOpen,
       loadRemoteImages: settings.loadRemoteImages,
@@ -420,6 +430,59 @@ async function openMail({ accountId, message, compose }) {
   }
 }
 
+// Brings the right-click menu and toolbar tooltip in line with the stored do-not-disturb state.
+async function renderDnd() {
+  const dnd = await loadDnd();
+  await browser.menus.update('dnd', { title: dnd ? `Do not disturb (${dndStatus(dnd)})` : 'Do not disturb' });
+  await browser.menus.update('dnd-separator', { visible: Boolean(dnd) });
+  await browser.menus.update('dnd-off', { visible: Boolean(dnd) });
+  await withLock(async () => renderBadge(await loadInbox()));
+}
+
+async function setDoNotDisturb({ choice }) {
+  await menusReady;
+  await browser.alarms.clear(DND_ALARM);
+  if (choice) {
+    const until = dndEnd(choice);
+    await browser.storage.local.set({ dnd: { choice, until } });
+    if (until !== null) await browser.alarms.create(DND_ALARM, { when: until });
+  } else {
+    await browser.storage.local.remove('dnd');
+  }
+  await renderDnd();
+}
+
+async function createMenus() {
+  await browser.menus.removeAll();
+  const item = (props) => browser.menus.create({ contexts: ['action'], ...props });
+  item({ id: 'open', title: 'Open Zoho Mail' });
+  item({ id: 'compose', title: 'Compose' });
+  item({ id: 'refresh', title: 'Refresh' });
+  item({ id: 'dnd', title: 'Do not disturb' });
+  for (const choice of DND_CHOICES) item({ id: `dnd:${choice.id}`, parentId: 'dnd', title: choice.title });
+  item({ id: 'dnd-separator', parentId: 'dnd', type: 'separator', visible: false });
+  item({ id: 'dnd-off', parentId: 'dnd', title: 'Turn off', visible: false });
+
+  // A period that ran out while Firefox was closed has no alarm left to end it.
+  const { dnd } = await browser.storage.local.get('dnd');
+  if (dnd && !isDndOn(dnd)) await browser.storage.local.remove('dnd');
+  else if (dnd?.until) await browser.alarms.create(DND_ALARM, { when: dnd.until });
+  await renderDnd();
+}
+
+const MENU_COMMANDS = {
+  open: () => openMail({}),
+  compose: () => openMail({ compose: true }),
+  refresh: checkAll,
+  'dnd-off': () => setDoNotDisturb({ choice: null }),
+};
+
+browser.menus.onClicked.addListener(({ menuItemId }) => {
+  const id = String(menuItemId);
+  const command = id.startsWith('dnd:') ? () => setDoNotDisturb({ choice: id.slice(4) }) : MENU_COMMANDS[id];
+  Promise.resolve(command?.()).catch((error) => console.warn(`Menu command ${id} failed`, error));
+});
+
 const HANDLERS = {
   getState,
   check: checkAll,
@@ -432,6 +495,7 @@ const HANDLERS = {
   refreshFolders,
   setWatchedFolders,
   openMail,
+  setDoNotDisturb,
   settingsChanged: scheduleAlarm,
 };
 
@@ -442,6 +506,7 @@ browser.runtime.onMessage.addListener((message) => {
 
 browser.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === POLL_ALARM) checkAll();
+  if (alarm.name === DND_ALARM) setDoNotDisturb({ choice: null });
 });
 
 browser.notifications.onClicked.addListener(async (id) => {
@@ -460,3 +525,6 @@ browser.runtime.onInstalled.addListener(async ({ reason }) => {
   if (reason === 'install') browser.runtime.openOptionsPage();
 });
 browser.runtime.onStartup.addListener(startUp);
+
+// Rebuilt whenever the background page loads, so the menu always matches the stored state.
+const menusReady = createMenus().catch((error) => console.warn('Could not create the menu', error));

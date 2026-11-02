@@ -166,5 +166,6 @@ open_tab("$base/options/options.html");
 wait_for('return document.querySelectorAll(".folders input").length > 0;', 'options accounts');
 print "OPTIONS folders offered: ", js('return [...document.querySelectorAll(".folders .check")].map(l => l.textContent.trim()).join(", ");'), "\n";
 print "OPTIONS redirect URI: ", js('return document.getElementById("redirect-uri").textContent;'), "\n";
+print "OPTIONS version: ", js('return document.getElementById("version").textContent;'), "\n";
 shot('options');
 print "OK\n";

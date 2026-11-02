@@ -134,6 +134,7 @@ async function init() {
 
   const redirectUri = browser.identity.getRedirectURL();
   $('redirect-uri').textContent = redirectUri;
+  $('version').textContent = `Version ${browser.runtime.getManifest().version}`;
   $('copy-redirect').addEventListener('click', async () => {
     await navigator.clipboard.writeText(redirectUri);
     $('copy-redirect').textContent = 'Copied';

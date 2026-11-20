@@ -6,6 +6,11 @@
           "update_hash" : "sha256:1174143e239c3b6562b1a4f098ae1d88a9a0de06d2b0ee203e5e3c57256e1d2a",
           "update_link" : "https://github.com/davidkeatscroft/zoho-mail-checker/releases/download/v1.2/inbox-peek-for-zoho-mail-1.2.xpi",
           "version" : "1.2"
+        },
+        {
+          "update_hash" : "sha256:846332b23065fc3df1230166fac752c59d64127e84179a5d0798ca01dd6e9b45",
+          "update_link" : "https://raw.githubusercontent.com/davidkeatscroft/zoho-mail-checker/main/releases/inbox-peek-for-zoho-mail-1.4.xpi",
+          "version" : "1.4"
         }
       ]
     }

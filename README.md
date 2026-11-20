@@ -7,7 +7,7 @@ A Firefox extension for Zoho Mail by David Keats-Croft. It is an independent pro
 - Unread count on the toolbar button, across every connected account
 - Desktop notifications and a sound for new mail, with a summary when several arrive at once. Choose a chime, bell, phone ring or marimba, or a sound file of your own (MP3, OGG or WAV, up to 1 MB)
 - Three popup sizes (Compact, Default and Large) and a light/dark toggle at the top of the popup. The theme follows your system until you choose one
-- A popup to read mail, mark it read, archive, report spam, move to Trash and send plain-text replies
+- A popup to read mail (opening a message marks it read, which you can turn off in settings), mark it read, archive, report spam, move to Trash and send plain-text replies
 - Right-click the toolbar button to open Zoho Mail, compose, refresh, or turn on do not disturb for 30 minutes, 1, 2 or 4 hours, the rest of today, or until you turn it off. Do not disturb silences notifications and the sound; the unread count keeps updating.
 - Several Zoho logins, each with a choice of folders to watch
 - Remote images blocked by default, so senders can't tell when you open their mail. You can choose to show them by default in settings

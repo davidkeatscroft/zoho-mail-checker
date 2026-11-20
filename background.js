@@ -513,7 +513,17 @@ async function startUp() {
   await checkAll();
 }
 
-browser.runtime.onInstalled.addListener(async ({ reason }) => {
+// Opening mail in the popup marks it read from 1.3 on. Earlier versions saved this as off
+// for everyone, so it is turned on once when they update; it can still be turned off.
+async function migrateFrom(previousVersion) {
+  const [major, minor] = String(previousVersion).split('.').map(Number);
+  if (major > 1 || (major === 1 && minor >= 3)) return;
+  const { settings } = await browser.storage.local.get('settings');
+  if (settings) await browser.storage.local.set({ settings: { ...settings, markReadOnOpen: true } });
+}
+
+browser.runtime.onInstalled.addListener(async ({ reason, previousVersion }) => {
+  if (reason === 'update') await migrateFrom(previousVersion);
   await startUp();
   if (reason === 'install') browser.runtime.openOptionsPage();
 });

@@ -49,7 +49,28 @@
     </section>
 
     <section>
-      <h2>Preferences</h2>
+      <h2>Appearance</h2>
+      <div class="pref">
+        <label for="popup-size">Popup size</label>
+        <select id="popup-size">
+          <option value="compact">Compact</option>
+          <option value="default">Default</option>
+          <option value="large">Large</option>
+        </select>
+      </div>
+      <div class="pref">
+        <label for="theme">Theme</label>
+        <select id="theme">
+          <option value="auto">Match my system</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+      <p class="note">You can also switch between light and dark with the button at the top of the popup.</p>
+    </section>
+
+    <section>
+      <h2>Notifications</h2>
       <div class="pref">
         <label for="poll-minutes">Check for new mail every</label>
         <select id="poll-minutes">
@@ -63,8 +84,23 @@
       <label class="check"><input type="checkbox" id="notify"> Show desktop notifications for new mail</label>
       <label class="check"><input type="checkbox" id="notify-preview"> Include sender, subject and preview in notifications</label>
       <label class="check"><input type="checkbox" id="sound"> Play a sound for new mail</label>
+      <div class="pref indent">
+        <label for="sound-choice">Sound</label>
+        <select id="sound-choice"></select>
+        <button id="play-sound" type="button">Play</button>
+      </div>
+      <div id="custom-sound" class="pref indent" hidden>
+        <span id="custom-sound-name" class="muted"></span>
+        <label class="file-button">Choose file…<input id="custom-sound-file" type="file" accept="audio/*"></label>
+      </div>
+      <p id="sound-status" class="status indent" role="status"></p>
+    </section>
+
+    <section>
+      <h2>Reading mail</h2>
       <label class="check"><input type="checkbox" id="mark-read-on-open"> Mark mail as read when I open it in the popup</label>
-      <label class="check"><input type="checkbox" id="load-remote-images"> Always load remote images (lets senders see when you open their mail)</label>
+      <label class="check"><input type="checkbox" id="load-remote-images"> Show images in the preview by default</label>
+      <p class="note">Images are fetched from the sender's server, which tells them you opened the message. When this is off, choose Load images on a message to see them.</p>
     </section>
 
     <p id="version" class="note"></p>

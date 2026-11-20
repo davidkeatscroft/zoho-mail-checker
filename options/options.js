@@ -1,5 +1,7 @@
-import { DEFAULT_SETTINGS, REGIONS } from '../lib/config.js';
+import { CUSTOM_SOUND_KEY, DEFAULT_SETTINGS, MAX_CUSTOM_SOUND_BYTES, REGIONS } from '../lib/config.js';
 import { authorize } from '../lib/auth.js';
+import { applyAppearance } from '../lib/appearance.js';
+import { SOUNDS, playSound } from '../lib/sounds.js';
 
 const $ = (id) => document.getElementById(id);
 const send = (type, payload) => browser.runtime.sendMessage({ type, ...payload });
@@ -117,6 +119,84 @@ async function renderAccounts() {
   }));
 }
 
+function setSoundStatus(text, isError = false) {
+  $('sound-status').textContent = text;
+  $('sound-status').classList.toggle('error', isError);
+}
+
+async function renderCustomSound() {
+  const custom = (await browser.storage.local.get(CUSTOM_SOUND_KEY))[CUSTOM_SOUND_KEY];
+  $('custom-sound').hidden = $('sound-choice').value !== 'custom';
+  $('custom-sound-name').textContent = custom ? custom.name : 'No file chosen yet. Until you choose one, the chime plays.';
+  return custom;
+}
+
+function readAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function chooseCustomSound() {
+  const file = $('custom-sound-file').files[0];
+  $('custom-sound-file').value = '';
+  if (!file) return;
+  if (file.size > MAX_CUSTOM_SOUND_BYTES) {
+    setSoundStatus('That file is over 1 MB. Choose a shorter sound.', true);
+    return;
+  }
+  const dataUrl = await readAsDataUrl(file);
+  // Check that Firefox can actually play it before keeping it.
+  try {
+    await playSound('custom', { dataUrl });
+  } catch {
+    setSoundStatus('Firefox could not play that file. Try an MP3, OGG or WAV.', true);
+    return;
+  }
+  await browser.storage.local.set({ [CUSTOM_SOUND_KEY]: { name: file.name, dataUrl } });
+  setSoundStatus('');
+  await renderCustomSound();
+}
+
+function initSounds(settings) {
+  const select = $('sound-choice');
+  select.append(...SOUNDS.map((sound) => el('option', { value: sound.id, textContent: sound.label })));
+  select.value = SOUNDS.some((s) => s.id === settings.soundChoice) ? settings.soundChoice : DEFAULT_SETTINGS.soundChoice;
+  select.addEventListener('change', async () => {
+    await saveSettings({ soundChoice: select.value });
+    setSoundStatus('');
+    const custom = await renderCustomSound();
+    if (select.value !== 'custom' || custom) playSound(select.value, custom).catch(() => {});
+  });
+  $('play-sound').addEventListener('click', async () => {
+    const custom = await renderCustomSound();
+    playSound(select.value, custom).catch((error) => setSoundStatus(`Could not play the sound. ${error.message}`, true));
+  });
+  $('custom-sound-file').addEventListener('change', () => chooseCustomSound().catch((error) => setSoundStatus(error.message, true)));
+  renderCustomSound();
+}
+
+function initAppearance(settings) {
+  applyAppearance(settings);
+  for (const [id, key] of [['popup-size', 'popupSize'], ['theme', 'theme']]) {
+    $(id).value = settings[key];
+    $(id).addEventListener('change', async () => {
+      await saveSettings({ [key]: $(id).value });
+      applyAppearance(await loadSettings());
+    });
+  }
+  // Follow the popup's light/dark toggle while this page is open.
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes.settings) return;
+    const next = { ...DEFAULT_SETTINGS, ...changes.settings.newValue };
+    applyAppearance(next);
+    $('theme').value = next.theme;
+  });
+}
+
 async function init() {
   const select = $('region');
   select.append(...Object.entries(REGIONS).map(([id, region]) => el('option', { value: id, textContent: region.label })));
@@ -131,6 +211,8 @@ async function init() {
     $(id).addEventListener('change', () => saveSettings({ [key]: $(id).checked }));
   }
   updateConsoleLink();
+  initAppearance(settings);
+  initSounds(settings);
 
   const redirectUri = browser.identity.getRedirectURL();
   $('redirect-uri').textContent = redirectUri;
@@ -143,6 +225,8 @@ async function init() {
 
   select.addEventListener('change', async () => {
     updateConsoleLink();
+  initAppearance(settings);
+  initSounds(settings);
     await saveSettings({ region: select.value });
   });
   $('poll-minutes').addEventListener('change', async () => {

@@ -4,6 +4,9 @@ import { badgeText, decodeEntities, diffNewMessages, replySubject, updateSeen } 
 import { buildEmailDocument, isSafeExternalLink } from '../lib/email-frame.js';
 import { DND_ALARM, dndEnd, dndStatus, isDndOn } from '../lib/dnd.js';
 import { ACCOUNT_ID, INBOX_ID, createMock, message } from './mock-zoho.js';
+import { applyAppearance } from '../lib/appearance.js';
+import { DEFAULT_SETTINGS, POPUP_SIZES } from '../lib/config.js';
+import { SOUNDS } from '../lib/sounds.js';
 
 const results = [];
 const send = (type, payload) => browser.runtime.sendMessage({ type, ...payload });
@@ -139,6 +142,21 @@ await test('link schemes are limited', () => {
   assertTrue(!isSafeExternalLink('javascript:alert(1)'));
   assertTrue(!isSafeExternalLink('file:///etc/passwd'));
   assertTrue(!isSafeExternalLink('not a url'));
+});
+
+await test('theme and popup size are applied to the page', () => {
+  const root = document.documentElement;
+  applyAppearance({ theme: 'dark', popupSize: 'large' });
+  assertEqual([root.dataset.theme, root.dataset.size], ['dark', 'large']);
+  applyAppearance({ theme: 'auto', popupSize: 'nonsense' });
+  assertEqual([root.dataset.theme, root.dataset.size], [undefined, 'default']);
+  assertEqual(POPUP_SIZES, ['compact', 'default', 'large']);
+  delete root.dataset.size;
+});
+
+await test('there are four built-in sounds plus your own file, and the default exists', () => {
+  assertEqual(SOUNDS.map((s) => s.id), ['chime', 'bell', 'ring', 'marimba', 'custom']);
+  assertTrue(SOUNDS.some((s) => s.id === DEFAULT_SETTINGS.soundChoice), 'default sound');
 });
 
 await test('the sandboxed frame really blocks scripts and remote images', async () => {

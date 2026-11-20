@@ -37,7 +37,9 @@ To release a version:
 
 1. Raise `version` in `manifest.json`, commit, and merge to `main`.
 2. Run `sh build.sh` and upload the zip to Mozilla as a new version of the add-on.
-3. Download the signed `.xpi`, then run `sh release.sh path/to/signed.xpi` on `main`. This publishes the `.xpi` as a GitHub release and lists it in `updates.json`.
+3. Download the signed `.xpi`, then run `sh release.sh path/to/signed.xpi` on `main`. This adds the `.xpi` to the [`releases`](releases) folder, lists it in `updates.json` and pushes both.
+
+Signed copies of every version from 1.4 on are in [`releases`](releases). Version 1.2 is on the GitHub releases page.
 
 ## Connect your account
 

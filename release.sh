@@ -1,7 +1,9 @@
 #!/bin/sh
-# Publishes a Mozilla-signed .xpi as a GitHub release and lists it in updates.json,
+# Adds a Mozilla-signed .xpi to the releases folder and lists it in updates.json,
 # so copies of 1.2 and later update themselves. Run it on main once Mozilla has signed the zip:
 #   sh release.sh path/to/signed.xpi
+# Firefox downloads the file from main on GitHub, so it must be pushed before updates.json
+# is; both go up in the same push here.
 set -e
 repo=davidkeatscroft/zoho-mail-checker
 [ -f "$1" ] || { echo "Usage: sh release.sh path/to/signed.xpi" >&2; exit 1; }
@@ -16,13 +18,13 @@ unzip -l "$xpi" | grep -q 'META-INF/mozilla.rsa' || { echo "The .xpi is not sign
 git diff --quiet HEAD || { echo "Commit or stash your changes first." >&2; exit 1; }
 
 name="inbox-peek-for-zoho-mail-$version.xpi"
-staging=$(mktemp -d)
-cp "$xpi" "$staging/$name"
-gh release create "v$version" "$staging/$name" --repo "$repo" --target main --title "$version" \
-  --notes "Signed by Mozilla. Install this file in Firefox, or wait for Firefox to update an existing copy of 1.2 or later."
+[ -e "releases/$name" ] && { echo "releases/$name already exists." >&2; exit 1; }
+mkdir -p releases
+cp "$xpi" "releases/$name"
 
-hash=$(shasum -a 256 "$xpi" | cut -d' ' -f1)
-link="https://github.com/$repo/releases/download/v$version/$name"
+hash=$( (sha256sum "releases/$name" 2>/dev/null || shasum -a 256 "releases/$name") | cut -d' ' -f1)
+link="https://raw.githubusercontent.com/$repo/main/releases/$name"
+staging=$(mktemp -d)
 perl -MJSON::PP -0777 -e '
   my ($version, $link, $hash) = splice @ARGV, 0, 3;
   my $json = JSON::PP->new->pretty->canonical->indent_length(2);
@@ -33,6 +35,7 @@ perl -MJSON::PP -0777 -e '
 ' "$version" "$link" "$hash" updates.json > "$staging/updates.json"
 grep -q "\"version\" : \"$version\"" "$staging/updates.json" || { echo "Could not add $version to updates.json." >&2; exit 1; }
 mv "$staging/updates.json" updates.json
-git commit -q -m "List $version in updates.json" updates.json
+git add "releases/$name" updates.json
+git commit -q -m "Release $version"
 git push -q origin main
 echo "Released $version: $link"

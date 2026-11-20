@@ -513,11 +513,11 @@ async function startUp() {
   await checkAll();
 }
 
-// Opening mail in the popup marks it read from 1.3 on. Earlier versions saved this as off
+// Opening mail in the popup marks it read from 1.4 on. Earlier versions saved this as off
 // for everyone, so it is turned on once when they update; it can still be turned off.
 async function migrateFrom(previousVersion) {
   const [major, minor] = String(previousVersion).split('.').map(Number);
-  if (major > 1 || (major === 1 && minor >= 3)) return;
+  if (major > 1 || (major === 1 && minor >= 4)) return;
   const { settings } = await browser.storage.local.get('settings');
   if (settings) await browser.storage.local.set({ settings: { ...settings, markReadOnOpen: true } });
 }

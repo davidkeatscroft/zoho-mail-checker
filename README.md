@@ -5,11 +5,13 @@ A Firefox extension for Zoho Mail by David Keats-Croft. It is an independent pro
 ## Features
 
 - Unread count on the toolbar button, across every connected account
-- Desktop notifications and a sound for new mail, with a summary when several arrive at once
+- Desktop notifications and a sound for new mail, with a summary when several arrive at once. Choose a chime, bell, phone ring or marimba, or a sound file of your own (MP3, OGG or WAV, up to 1 MB)
+- Three popup sizes (Compact, Default and Large) and a light/dark toggle at the top of the popup. The theme follows your system until you choose one
 - A popup to read mail, mark it read, archive, report spam, move to Trash and send plain-text replies
 - Right-click the toolbar button to open Zoho Mail, compose, refresh, or turn on do not disturb for 30 minutes, 1, 2 or 4 hours, the rest of today, or until you turn it off. Do not disturb silences notifications and the sound; the unread count keeps updating.
 - Several Zoho logins, each with a choice of folders to watch
-- Remote images blocked by default, so senders can't tell when you open their mail
+- Remote images blocked by default, so senders can't tell when you open their mail. You can choose to show them by default in settings
+- Emails wider than the popup are scaled down to fit, so there's no sideways scrolling
 - Keyboard use: `Alt+Shift+Z` opens the popup, `j`/`k` move, `Enter` opens, `m` marks read, `e` archives, `d` trashes, `r` replies (in the reading view), `!` reports spam (in the reading view), `u` goes back
 
 ## Install
@@ -55,6 +57,7 @@ If you connect a login from a different Zoho region from the one the client was 
 - The unread list, including subjects and previews, is held in memory only. Message IDs are saved to disk, so old mail doesn't notify you twice. Message bodies are never stored.
 - Email HTML renders in a sandboxed frame with scripts disabled and a content security policy that blocks network access, apart from images you choose to load.
 - Move to Trash never permanently deletes mail.
+- A sound file you choose is stored in your Firefox profile and never leaves it.
 
 ## Tests
 

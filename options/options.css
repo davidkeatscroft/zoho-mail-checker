@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --bg: #f7f8fa;
   --panel: #ffffff;
   --text: #1f2329;
@@ -10,7 +10,8 @@
   --danger: #b42318;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #17181b;
     --panel: #1f2125;
     --text: #e9ebee;
@@ -20,6 +21,17 @@
     --accent-text: #10131a;
     --danger: #ff8a80;
   }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #17181b;
+  --panel: #1f2125;
+  --text: #e9ebee;
+  --muted: #a0a6b1;
+  --border: #383b42;
+  --accent: #6ea8fe;
+  --accent-text: #10131a;
+  --danger: #ff8a80;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans-serif; }
@@ -66,3 +78,8 @@ button:disabled { opacity: 0.6; cursor: default; }
 .folders .check { padding: 2px 0; overflow-wrap: anywhere; }
 .folders-label { color: var(--muted); font-size: 13px; }
 .empty { color: var(--muted); margin: 0; }
+.pref.indent, .status.indent { margin-left: 26px; }
+.muted { color: var(--muted); }
+.file-button { position: relative; padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); cursor: pointer; }
+.file-button:focus-within { outline: 2px solid var(--accent); }
+.file-button input { position: absolute; opacity: 0; width: 1px; height: 1px; }

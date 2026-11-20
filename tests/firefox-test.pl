@@ -138,7 +138,7 @@ sub open_tab {
 }
 
 open_tab("$base/popup/popup.html");
-cmd('WebDriver:SetWindowRect', { width => 460, height => 700 });
+cmd('WebDriver:SetWindowRect', { width => 760, height => 720 });
 wait_for('return document.querySelectorAll(".row").length === 3;', 'popup rows');
 print "POPUP title: ", js('return document.getElementById("title").textContent;'), "\n";
 print "POPUP first row: ", js('return document.querySelector(".row .sender").textContent + " | " + document.querySelector(".row .subject").textContent;'), "\n";

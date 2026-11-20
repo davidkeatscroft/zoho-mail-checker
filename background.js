@@ -1,10 +1,11 @@
-import { DEFAULT_SETTINGS, MAX_INDIVIDUAL_NOTIFICATIONS, POLL_ALARM, REGIONS } from './lib/config.js';
+import { CUSTOM_SOUND_KEY, DEFAULT_SETTINGS, MAX_INDIVIDUAL_NOTIFICATIONS, POLL_ALARM, REGIONS } from './lib/config.js';
 import { AuthExpiredError, refreshAccessToken, revokeRefreshToken } from './lib/auth.js';
 import {
   extractEmail, listUnread, normalizeAccount, normalizeFolder, replyToFromHeaders, request, updateMessageBody,
 } from './lib/zoho.js';
 import { badgeText, decodeEntities, diffNewMessages, totalUnread, updateSeen } from './lib/inbox.js';
 import { DND_ALARM, DND_CHOICES, dndEnd, dndStatus, isDndOn } from './lib/dnd.js';
+import { playSound } from './lib/sounds.js';
 
 const ACTED_TTL_MS = 60000;
 const UPDATE_MODES = { markRead: 'markAsRead', archive: 'archiveMails', spam: 'moveToSpam' };
@@ -117,21 +118,11 @@ function messageUrl(region, folderPath, messageId) {
   return `${REGIONS[region].mail}/zm/#mail/folder/${folder}/p/${messageId}`;
 }
 
-function playChime() {
-  const context = new AudioContext();
-  [[660, 0], [880, 0.14]].forEach(([frequency, delay]) => {
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    const start = context.currentTime + delay;
-    oscillator.frequency.value = frequency;
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(0.18, start + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
-    oscillator.connect(gain).connect(context.destination);
-    oscillator.start(start);
-    oscillator.stop(start + 0.36);
-  });
-  setTimeout(() => context.close(), 800);
+async function playNotificationSound(settings) {
+  const custom = settings.soundChoice === 'custom'
+    ? (await browser.storage.local.get(CUSTOM_SOUND_KEY))[CUSTOM_SOUND_KEY]
+    : null;
+  await playSound(settings.soundChoice, custom);
 }
 
 async function notifyNewMail(newMessages, connections, settings) {
@@ -139,7 +130,7 @@ async function notifyNewMail(newMessages, connections, settings) {
   if (!newMessages.length || await loadDnd()) return;
   if (settings.sound) {
     try {
-      playChime();
+      await playNotificationSound(settings);
     } catch (error) {
       console.warn('Could not play the notification sound', error);
     }
@@ -391,6 +382,8 @@ async function getState() {
     settings: {
       markReadOnOpen: settings.markReadOnOpen,
       loadRemoteImages: settings.loadRemoteImages,
+      theme: settings.theme,
+      popupSize: settings.popupSize,
     },
     connections: connections.map((c) => ({
       id: c.id,

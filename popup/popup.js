@@ -1,6 +1,8 @@
 import { buildEmailDocument, isSafeExternalLink } from '../lib/email-frame.js';
 import { decodeEntities, replySubject, totalUnread } from '../lib/inbox.js';
 import { extractEmail } from '../lib/zoho.js';
+import { applyAppearance, effectiveTheme } from '../lib/appearance.js';
+import { DEFAULT_SETTINGS } from '../lib/config.js';
 
 const MAX_ROWS_PER_ACCOUNT = 100;
 const $ = (id) => document.getElementById(id);
@@ -47,6 +49,17 @@ function shortTime(ms) {
 const senderName = (m) => decodeEntities(m.sender) || extractEmail(decodeEntities(m.fromAddress)) || 'Unknown sender';
 const subjectOf = (m) => decodeEntities(m.subject) || '(no subject)';
 
+// A circle with the sender's first letter, coloured consistently per sender.
+function avatar(message, node = el('span', { className: 'avatar', ariaHidden: 'true' })) {
+  const name = senderName(message);
+  const key = extractEmail(decodeEntities(message.fromAddress)) || name;
+  let hash = 0;
+  for (const ch of key.toLowerCase()) hash = (hash * 31 + ch.codePointAt(0)) % 360;
+  node.textContent = [...name.replace(/^[^\p{L}\p{N}]+/u, '')][0] || '?';
+  node.style.setProperty('--hue', String(hash));
+  return node;
+}
+
 function accounts() {
   return (state?.connections || []).flatMap((c) => c.accounts.map((a) => ({ ...a, needsReauth: c.needsReauth })));
 }
@@ -80,13 +93,15 @@ function renderRow(message) {
   }, icon(name));
 
   const row = el('div', { className: 'row', tabIndex: 0, onclick: () => openMessage(message) },
-    el('div', { className: 'row-top' },
-      el('span', { className: 'sender', textContent: senderName(message) }),
-      el('span', { className: 'time', textContent: shortTime(message.receivedTime) })),
-    el('div', { className: 'subject' },
-      message.hasAttachment ? icon('clip') : null,
-      el('span', { textContent: subjectOf(message) })),
-    el('div', { className: 'summary', textContent: decodeEntities(message.summary) }),
+    avatar(message),
+    el('div', { className: 'row-main' },
+      el('div', { className: 'row-top' },
+        el('span', { className: 'sender', textContent: senderName(message) }),
+        el('span', { className: 'time', textContent: shortTime(message.receivedTime) })),
+      el('div', { className: 'subject' },
+        message.hasAttachment ? icon('clip') : null,
+        el('span', { textContent: subjectOf(message) })),
+      el('div', { className: 'summary', textContent: decodeEntities(message.summary) })),
     el('div', { className: 'row-actions' },
       quick('check', 'markRead', 'Mark as read'),
       quick('archive', 'archive', 'Archive'),
@@ -100,7 +115,8 @@ function renderList() {
   const container = $('list-view');
   const scroll = container.scrollTop;
   const total = totalUnread(state?.inbox);
-  $('title').textContent = total ? `Zoho Mail · ${total} unread` : 'Zoho Mail';
+  $('unread-count').textContent = `${total} unread`;
+  $('unread-count').hidden = !total;
 
   const nodes = [];
   const all = accounts();
@@ -177,6 +193,7 @@ async function openMessage(message) {
   const address = extractEmail(decodeEntities(message.fromAddress));
   const name = senderName(message);
   $('read-from').textContent = address && address !== name ? `${name} <${address}>` : name;
+  avatar(message, $('read-avatar'));
   $('read-date').textContent = message.receivedTime ? new Date(message.receivedTime).toLocaleString() : '';
   const status = $('read-status');
   status.textContent = 'Loading…';
@@ -247,9 +264,25 @@ async function submitReply(event) {
   }
 }
 
+// Emails built for a wider screen are scaled down to the frame's width rather than
+// scrolling sideways. Runs again once images load, as they can widen the layout.
+function fitToWidth(doc) {
+  const root = doc?.documentElement;
+  if (!root || !doc.body) return;
+  doc.body.style.zoom = '';
+  const available = root.clientWidth;
+  const needed = root.scrollWidth;
+  // The body has a 12px margin, which scrollWidth leaves out on the right.
+  if (needed > available + 1) doc.body.style.zoom = String(Math.max(0.4, available / (needed + 12)));
+}
+
 // The frame runs no scripts, so links are handled from here and always open in a new tab.
 $('body-frame').addEventListener('load', () => {
   const doc = $('body-frame').contentDocument;
+  fitToWidth(doc);
+  doc?.querySelectorAll('img').forEach((img) => {
+    if (!img.complete) img.addEventListener('load', () => fitToWidth(doc), { once: true });
+  });
   doc?.addEventListener('click', (event) => {
     const link = event.target.closest?.('a[href]');
     if (!link) return;
@@ -311,12 +344,32 @@ async function refresh() {
   }
 }
 
+function renderThemeToggle() {
+  const dark = effectiveTheme(state?.settings.theme) === 'dark';
+  const button = $('theme-toggle');
+  button.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+  button.querySelector('use').setAttribute('href', dark ? '#i-sun' : '#i-moon');
+}
+
+async function toggleTheme() {
+  const theme = effectiveTheme(state.settings.theme) === 'dark' ? 'light' : 'dark';
+  state.settings.theme = theme;
+  applyAppearance(state.settings);
+  renderThemeToggle();
+  const { settings } = await browser.storage.local.get('settings');
+  await browser.storage.local.set({ settings: { ...DEFAULT_SETTINGS, ...settings, theme } });
+}
+
 async function loadState() {
   state = await send('getState');
+  applyAppearance(state.settings);
+  renderThemeToggle();
   if (!current) renderList();
 }
 
 $('refresh').addEventListener('click', refresh);
+$('theme-toggle').addEventListener('click', toggleTheme);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderThemeToggle);
 $('compose').addEventListener('click', () => openMail({ compose: true }));
 $('open-inbox').addEventListener('click', () => openMail({}));
 $('settings').addEventListener('click', () => {
